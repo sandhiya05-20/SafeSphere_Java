@@ -45,9 +45,11 @@ SafeSphere is a smart personal data vault designed to protect your confidential 
 ---
 
 ## 👩‍💻 Developers
-Team of 4 Java enthusiasts from [Your School Name]  
-**Lead Developer:** Sandhiya  
-**Contributors:** [Teammate Names]
+Team of 4 Java enthusiasts 
+Sandhiya S
+Archana V
+Aghila NA
+Harshitha T
 
 ---
 
