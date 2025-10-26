@@ -5,6 +5,11 @@ import com.safesphere.security.PinManager;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Login screen for SafeSphere.
+ * Verifies PIN and opens Dashboard in either real or fake mode.
+ * Now user-aware: passes ownerId from DB to Dashboard.
+ */
 public class LoginScreen extends JFrame {
     private final JPasswordField pinField;
 
@@ -23,7 +28,7 @@ public class LoginScreen extends JFrame {
         logo.setBounds(80, 20, 250, 60);
         add(logo);
 
-// Set window icon (top-left corner)
+        // 🔹 Window icon
         setIconImage(img);
 
         // 🔹 Tagline
@@ -66,21 +71,44 @@ public class LoginScreen extends JFrame {
         getContentPane().setBackground(new Color(240, 245, 250));
         getRootPane().setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, new Color(180, 180, 180)));
 
-
-        // 🔹 Login logic
+        // ================================================================
+        // 🔹 LOGIN LOGIC (uses DB verification via PinManager)
+        // ================================================================
         loginBtn.addActionListener(e -> {
-            String pin = new String(pinField.getPassword()).trim();
+            String enteredPin = new String(pinField.getPassword()).trim();
             try {
-                boolean realMode = PinManager.verifyPin(pin);
-                Dashboard dash = new Dashboard(realMode);
-                dash.setVisible(true);
-                this.dispose();
+                // Verify against database (owner created by DefaultUserHelper)
+                boolean valid = PinManager.verifyPinForUser("owner", enteredPin);
+
+                if (valid) {
+                    JOptionPane.showMessageDialog(this, "Access granted! Opening dashboard...");
+
+                    // ✅ Get actual user ID from the database via PinManager
+                    int ownerId = PinManager.getUserIdForUsername("owner");
+
+                    Dashboard dash = new Dashboard(ownerId, true); // pass user ID + real mode
+                    dash.setVisible(true);
+                    this.dispose();
+
+                } else {
+                    JOptionPane.showMessageDialog(this, "Incorrect PIN! Switching to fake mode...");
+                    Dashboard dash = new Dashboard(1, false); // fake mode fallback
+                    dash.setVisible(true);
+                    this.dispose();
+                }
+
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Invalid PIN or error verifying.");
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Error verifying PIN: " + ex.getMessage(),
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // 🔹 Change PIN
+        // ================================================================
+        // 🔹 CHANGE PIN (same as before)
+        // ================================================================
         changePinBtn.addActionListener(e -> {
             String current = JOptionPane.showInputDialog(this, "Enter current PIN:");
             if (current == null) return;
