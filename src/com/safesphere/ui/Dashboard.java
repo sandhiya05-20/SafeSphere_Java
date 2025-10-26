@@ -16,7 +16,7 @@ public class Dashboard extends JFrame {
         String path = realMode ? "data/realData.sfs" : "data/fakeData.sfs";
         storage = new DataStorage(path);
 
-        setTitle(realMode ? "SafeSphere Dashboard - Real Mode" : "SafeSphere Dashboard - Fake Mode");
+        setTitle((realMode ? "SafeSphere Dashboard - Real Mode" : "SafeSphere Dashboard - Fake Mode") + " - updated by Archana");
         setSize(600, 420);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
