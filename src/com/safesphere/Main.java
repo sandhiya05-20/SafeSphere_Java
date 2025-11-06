@@ -15,12 +15,15 @@ import javax.swing.SwingUtilities;
 public class Main {
     public static void main(String[] args) {
         System.out.println("Starting SafeSphere...");
+        System.out.println("DEBUG user.dir = " + System.getProperty("user.dir"));
+        System.out.println("DEBUG expected DB path = " + java.nio.file.Paths.get("data", "safesphere.db").toAbsolutePath());
 
         try {
             // Initialize database connection and essential components
             DBManager.getInstance();
             KeyDerivation.loadOrCreateSalt();
             DefaultUserHelper.createDefaultUserIfMissing();
+            com.safesphere.data.EventLogger.log(1, "APP_START", "User started SafeSphere");
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("❌ Database initialization failed!");

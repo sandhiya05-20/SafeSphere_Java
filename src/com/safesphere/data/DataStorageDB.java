@@ -10,14 +10,33 @@ import java.util.List;
  * DataStorageDB: stores encrypted entries in the DB.
  * It uses the existing EncryptionManager which produces/consumes Base64 strings.
  *
- * - saveEntry(ownerId, type, title, plaintext) : encrypts plaintext and stores it
- * - loadEntries(ownerId) : returns list of EntryItem with decrypted 'content' field
+ * - saveEntry(ownerId, type, title, plaintext) : encrypts plaintext and stores as BLOB.
+ * - loadEntries(ownerId) : returns list of EntryItem with decrypted 'content' field.
+ *
+ * This version calls DbMigration.ensureSaltColumn(...) once at construction time so the
+ * users table will gain the 'salt' column if missing.
  */
 public class DataStorageDB {
     private final DBManager db;
 
     public DataStorageDB() throws Exception {
         db = DBManager.getInstance();
+
+        // Run DB migration once at startup to ensure users.salt column exists.
+        // We open a short-lived connection, run the migration, then close it.
+        try (Connection conn = db.getConnection()) {
+            if (conn == null) {
+                System.err.println("[DataStorageDB] Warning: got null Connection from DBManager");
+            } else {
+                try {
+                    DbMigration.ensureSaltColumn(conn);
+                } catch (SQLException ex) {
+                    // Bubble up as Exception to caller so startup fails loudly if migration cannot run.
+                    System.err.println("[DataStorageDB] DbMigration failed: " + ex.getMessage());
+                    throw ex;
+                }
+            }
+        }
     }
 
     /**
@@ -81,14 +100,8 @@ public class DataStorageDB {
 
     /**
      * Update an existing entry's title and plaintext content.
-     * If you want to update other columns, extend this method.
-     *
-     * @param entryId id of the entry to update
-     * @param newTitle new title (may be same as old)
-     * @param newPlaintext new plaintext content (will be encrypted)
      */
     public void updateEntry(int entryId, String newTitle, String newPlaintext) throws Exception {
-        // encrypt plaintext using your EncryptionManager (returns Base64 string)
         String encryptedBase64 = EncryptionManager.encrypt(newPlaintext);
         byte[] blob = encryptedBase64.getBytes("UTF-8");
 
@@ -100,7 +113,6 @@ public class DataStorageDB {
             ps.setInt(3, entryId);
             int updated = ps.executeUpdate();
             if (updated == 0) {
-                // optional: throw or log if nothing was updated
                 System.out.println("updateEntry: no row with id=" + entryId);
             }
         }
